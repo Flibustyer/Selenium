@@ -64,7 +64,7 @@ class TestStartPage:
         assert error_message.text == 'Error'
         driver.close()
 
-    def test_registration_form(self, execution_number):
+    def test_registration_form(self):
         """
         - Pre-condition:
             -Open start page, registration form
@@ -113,5 +113,5 @@ class TestStartPage:
         # Verify transfer to personal page
         page_title = driver.find_element(by=By.XPATH, value=f".//span[text()=' {username}']")
         assert page_title.text == username
-        self.log.info("Transfer  to personal page (registration) was verified for - ", username)
+        self.log.info("Transfer  to personal page (registration) was verified for - ")
         driver.close()
