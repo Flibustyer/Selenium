@@ -1,70 +1,50 @@
 """Test related to registration form and process"""
 import logging
-import random
-import string
-import time
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+from pages.utils import random_num, random_str
 
 
 class TestStartPage:
     """Stores test for registration form base functionality"""
-    log = logging.getLogger("[StartPage]")
+    log = logging.getLogger("[TestStartPage]")
 
-    @staticmethod
-    def random_num():
-        """Generates random number"""
-        return str(random.randint(111111, 999999))
-
-    @staticmethod
-    def random_str(length=5):
-        """Generates random string"""
-        return ''.join(random.choice(string.ascii_letters) for _ in range(length))
-
-    def test_register(self):
+    def test_invalid_login(self, start_page):
         """
         - Pre-condition:
             -Open start page
         -Steps:
-            -Fill login
-            -Fill Password
+            -Fill in login
+            -Fill in wrong Password
             -Click on SignIn button
             -Verify error
         """
-        # open start page
-        driver = webdriver.Chrome(executable_path="C:\chromedriver\chromedriver.exe")
-        driver.get("https://qa-complexapp.onrender.com/")
-        self.log.info("Start page was opened")
-        time.sleep(1)
-
-        # Fill in Login
-        login_field = driver.find_element(By.XPATH, ".//input[@placeholder='Username']")
-        login_field.clear()
-        login_field.send_keys("testuser1234")
-        self.log.info("Login was filled")
-        time.sleep(1)
-
-        # Fill in password
-        password_field = driver.find_element(By.XPATH,
-                                             ".//input[@name='password'][@class='form-control form-control-sm input-dark']")
-        password_field.clear()
-        password_field.send_keys("testuser1234")
-        self.log.info("Password was filled")
-        time.sleep(1)
-
-        # Click on SignIn button
-        sign_in = driver.find_element(By.XPATH, ".//button[text()='Sign In']")
-        sign_in.click()
-        self.log.info("Sign in was clicked")
-        time.sleep(1)
+        # Login as invalid username
+        start_page.sign_in("test", "test1")
+        self.log.info("Logged in as invalid username")
 
         # Verify error
-        error_message = driver.find_element(By.XPATH, ".//div[@class='alert alert-danger text-center']")
-        assert error_message.text == 'Error'
-        driver.close()
+        start_page.verify_sign_in_error()
+        self.log.info("Error message was verified")
 
-    def test_registration_form(self):
+    def test_empty_login(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page
+        -Steps:
+            -Fill in empty login
+            -Fill in empty Password
+            -Click on SignIn button
+            -Verify error
+        """
+        # Login with empty username and password
+        start_page.sign_in("", "")
+        self.log.info("Logged in with empty username and password")
+
+        # Verify error
+        start_page.verify_sign_in_error()
+        self.log.info("Error message was verified")
+
+    def test_registration_form(self, start_page):
         """
         - Pre-condition:
             -Open start page, registration form
@@ -75,43 +55,102 @@ class TestStartPage:
             -Click on "Sign Up for OurApp" button
             -Verify transfer to personal page
         """
+        # Prepare test data
+        username = f"userrandomtest{random_num()}"
+        email = f"{username}@user.com"
+        password = f"pass{username}"
 
-        # open start page
-        driver = webdriver.Chrome(executable_path="C:\chromedriver\chromedriver.exe")
-        driver.get("https://qa-complexapp.onrender.com/")
-        self.log.info("Start page was opened")
-        time.sleep(1)
+        # Fill in username, email, password
+        hello_page = start_page.sign_up(username=username, email=email, password=password)
+        self.log.info("User was registered")
 
-        # Fill in Login
-        username_field = driver.find_element(by=By.XPATH, value=".//input[@id='username-register']")
-        username_field.clear()
-        username = f"testuser{self.random_num()}"
-        username_field.send_keys(username)
-        time.sleep(1)
-        self.log.info("Username was filled")
+        # Verify transfer to Hello page
+        hello_page.verify_success_sign_up(username=username)
+        self.log.info("Registration for user '%s' was success and verified", username)
 
-        # Fill in email
-        email_field = driver.find_element(by=By.XPATH, value=".//input[@id='email-register']")
-        email_field.clear()
-        email_field.send_keys(f"{username}@user.com")
-        self.log.info("Email was filled")
-        time.sleep(1)
+    def test_existing_reg_username(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page, registration form
+        -Steps:
+            -Fill in already registered username
+            -Verify error
+        """
+        # Prepare test data
+        username = "test1"
 
-        # Fill in password
-        password_field = driver.find_element(by=By.XPATH, value=".//input[@id='password-register']")
-        password_field.clear()
-        password_field.send_keys(f"pass{username}")
-        self.log.info("Password was filled")
-        time.sleep(2)
-
-        # Click on Sign Up button
-        sign_up = driver.find_element(by=By.XPATH, value=".//button[text()='Sign up for OurApp']")
-        sign_up.click()
-        self.log.info("Sign Up was clicked")
-        time.sleep(1)
+        # Fill in username
+        start_page.sign_up(username=username, email='', password='')
+        self.log.info("Existing username was filled in")
 
         # Verify transfer to personal page
-        page_title = driver.find_element(by=By.XPATH, value=f".//span[text()=' {username}']")
-        assert page_title.text == username
-        self.log.info("Transfer  to personal page (registration) was verified for - ")
-        driver.close()
+        start_page.verify_sign_up_error()
+        self.log.info("Error with already existing username was verified")
+
+    def test_invalid_symbol_reg_username(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page, registration form
+        -Steps:
+            -Fill in username with invalid symbols
+            -Verify error
+        """
+        # Prepare test data
+        username = "test_user!={"
+        email = f"{username}@user.com"
+        password = f"pass{username}"
+
+        # Fill in fields
+        start_page.sign_up(username=username, email=email, password=password)
+        self.log.info("Username with invalid symbols was filled in")
+
+        # Verify error
+        start_page.verify_sign_up_error()
+        self.log.info("Error about invalid symbols in username was verified")
+
+    def test_existing_reg_email(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page, registration form
+        -Steps:
+            -Fill in the username
+            -Fill in email that already being used
+            -Verify error
+        """
+
+        # Prepare test data
+        username = f"{random_str()}{random_num()}"
+        email = "test@test.com"
+        password = f"pass{username}"
+
+        # Fill in fields
+        start_page.sign_up(username=username, email=email, password=password)
+        self.log.info("Existing email was filled in")
+
+        # Verify error
+        start_page.verify_sign_up_error()
+        self.log.info("Error with already existing email was verified")
+
+    def test_invalid_len_reg_pass_len(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page, registration form
+        -Steps:
+            -Fill in the username
+            -Fill in email address
+            -Fill in Password with more than 50 symbols
+            -Verify error
+        """
+
+        # Prepare test data
+        username = f"{random_str()}{random_num()}"
+        email = f"{username}@user.com"
+        password = ''.join([str(x) for x in range(31)])
+
+        # Fill in fields
+        start_page.sign_up(username=username, email=email, password=password)
+        self.log.info("Password with over length was filled in")
+
+        # Verify error
+        start_page.verify_sign_up_error()
+        self.log.info("Error with Password length was verified")

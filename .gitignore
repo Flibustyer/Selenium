@@ -2,4 +2,7 @@
 /Lib/
 /.idea/
 /Scripts/
-
+/.pytest_cache/
+/venv/
+/__pycache__/
+__init__
