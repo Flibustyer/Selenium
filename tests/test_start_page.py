@@ -8,6 +8,28 @@ class TestStartPage:
     """Stores test for registration form base functionality"""
     log = logging.getLogger("[TestStartPage]")
 
+    def test_valid_login(self, start_page):
+        """
+        - Pre-condition:
+            -Open start page
+        -Steps:
+            -Fill in valid login
+            -Fill in valid Password
+            -Click on Sign In button
+            -Verify success message
+        """
+        # Prepare test data
+        username = "tester"
+        password = "1234567891011"
+
+        # Login as valid username
+        hello_page = start_page.sign_in(username, password)
+        self.log.info("Logged in as valid username")
+
+        # Verify transfer to Hello page
+        hello_page.verify_success_sign_in(username=username)
+        self.log.info("Sign in for user '%s' was success and verified", username)
+
     def test_invalid_login(self, start_page):
         """
         - Pre-condition:
@@ -58,7 +80,7 @@ class TestStartPage:
         # Prepare test data
         username = f"userrandomtest{random_num()}"
         email = f"{username}@user.com"
-        password = f"pass{username}"
+        password = f"password{username}"
 
         # Fill in username, email, password
         hello_page = start_page.sign_up(username=username, email=email, password=password)
@@ -77,10 +99,12 @@ class TestStartPage:
             -Verify error
         """
         # Prepare test data
-        username = "test1"
+        username = "test"
+        email = f"{random_str()}@user.com"
+        password = f"password{username}"
 
         # Fill in username
-        start_page.sign_up(username=username, email='', password='')
+        start_page.sign_up(username=username, email=email, password=password, verify=False)
         self.log.info("Existing username was filled in")
 
         # Verify transfer to personal page
@@ -101,7 +125,7 @@ class TestStartPage:
         password = f"pass{username}"
 
         # Fill in fields
-        start_page.sign_up(username=username, email=email, password=password)
+        start_page.sign_up(username=username, email=email, password=password, verify=False)
         self.log.info("Username with invalid symbols was filled in")
 
         # Verify error
@@ -124,7 +148,7 @@ class TestStartPage:
         password = f"pass{username}"
 
         # Fill in fields
-        start_page.sign_up(username=username, email=email, password=password)
+        start_page.sign_up(username=username, email=email, password=password, verify=False)
         self.log.info("Existing email was filled in")
 
         # Verify error
@@ -148,7 +172,7 @@ class TestStartPage:
         password = ''.join([str(x) for x in range(31)])
 
         # Fill in fields
-        start_page.sign_up(username=username, email=email, password=password)
+        start_page.sign_up(username=username, email=email, password=password, verify=False)
         self.log.info("Password with over length was filled in")
 
         # Verify error
